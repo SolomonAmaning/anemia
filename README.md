@@ -118,7 +118,6 @@ anemia/
 ## Future Enhancements
 - Add **real-time webcam support** for live conjunctiva detection.
 - Incorporate **additional health parameters** for a more comprehensive diagnostic tool.
-- Implement cloud deployment for broader accessibility.
 
 ---
 
