@@ -75,11 +75,11 @@ Ensure you have the following installed:
 ## File Structure
 ```
 anemia/
-├── amemia_prediction.py                   # Streamlit application script
-├── requirements.txt         # Python dependencies
-├── README.md                # Project documentation
-├── /runs/classify/train8/   # Folder containing the YOLOv8 trained model
-└── /sample_images/          # Sample conjunctiva images for testing (optional)
+├── amemia_prediction.py                   
+├── requirements.txt         
+├── README.md               
+├── /runs/classify/train8/   
+└── /sample_images/          
 ```
 
 ---
