@@ -74,8 +74,8 @@ Ensure you have the following installed:
 
 ## File Structure
 ```
-anemia-detection-app/
-├── app.py                   # Streamlit application script
+anemia/
+├── amemia_prediction.py                   # Streamlit application script
 ├── requirements.txt         # Python dependencies
 ├── README.md                # Project documentation
 ├── /runs/classify/train8/   # Folder containing the YOLOv8 trained model
@@ -87,7 +87,7 @@ anemia-detection-app/
 ## Example Workflow
 1. Launch the application:
    ```bash
-   streamlit run app.py
+   streamlit run anemia_prediction.py
    ```
 2. Upload conjunctiva images.
 3. View predictions along with confidence scores.
@@ -123,4 +123,4 @@ anemia-detection-app/
 ---
 
 ## License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. 
