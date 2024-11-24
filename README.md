@@ -51,7 +51,7 @@ Ensure you have the following installed:
 ### Installation
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/anemia-detection-app.git
+   git clone git@github.com:SolomonAmaning/anemia.git
    cd anemia-detection-app
    ```
 
