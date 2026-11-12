@@ -4,3 +4,12 @@ myenv/
 .venv/
 __pycache__/
 .pytest_cache/
+.models/
+.env
+.env.*
+dataset/
+datasets/
+data/
+Conjuctiva_images/
+evaluation-private/
+.local-evaluation/

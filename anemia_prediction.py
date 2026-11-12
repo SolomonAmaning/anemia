@@ -1,8 +1,20 @@
 """Conjunctival-image research interface. Not a diagnostic device."""
 import streamlit as st
+import hmac
+import os
 from inference import classify, load_model, read_image
 
 st.set_page_config(page_title="Conjunctiva Lab | Solomon Odum", layout="wide")
+
+# Optional private staging gate. Set the password through Railway variables,
+# never in source control. This is not a full account/authentication service.
+access_password = os.getenv("ANEMIA_DEMO_PASSWORD")
+if access_password:
+    st.title("Conjunctiva Lab · Private research demo")
+    entered_password = st.text_input("Demo access password", type="password")
+    if not hmac.compare_digest(entered_password.encode(), access_password.encode()):
+        st.info("Enter the demo password to continue. Do not upload patient information.")
+        st.stop()
 
 
 @st.cache_resource
@@ -20,6 +32,7 @@ st.sidebar.caption("MODEL / YOLOv8 classification")
 st.sidebar.write("Single-image and batch inference")
 st.sidebar.write("Outputs use the trained model's class labels, not an assumed class order.")
 st.sidebar.info("Use consented, de-identified research images only. Do not upload identifiable patient images to a public demo.")
+st.sidebar.caption("The app does not write uploaded images to disk or forward them to an AI API. Railway still receives uploads for in-memory processing; do not upload protected health information.")
 
 try:
     model = get_model()
@@ -40,6 +53,9 @@ with left:
     consent = st.checkbox("I am using consented, de-identified research images.")
     files = st.file_uploader("Research images", type=["jpg", "png", "jpeg"], accept_multiple_files=True, disabled=not consent)
     if files:
+        if len(files) > 5:
+            st.error("Process at most five research images per batch.")
+            st.stop()
         for file in files:
             try:
                 image = read_image(file)

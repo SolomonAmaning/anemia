@@ -51,3 +51,25 @@ def test_app_loads():
     assert not app.exception
     assert not app.error
     assert app.metric[0].value == "Loaded"
+
+
+def test_private_demo_gate(monkeypatch):
+    from pathlib import Path
+    monkeypatch.setenv("ANEMIA_DEMO_PASSWORD", "synthetic-test-password")
+    app = AppTest.from_file(str(Path(__file__).parent / "anemia_prediction.py")).run(timeout=90)
+    assert not app.exception
+    assert len(app.metric) == 0
+    app.text_input[0].set_value("incorrect").run(timeout=90)
+    assert len(app.metric) == 0
+    app.text_input[0].set_value("synthetic-test-password").run(timeout=90)
+    assert not app.exception
+    assert app.metric[0].value == "Loaded"
+
+
+def test_actual_image_format_is_checked():
+    file = BytesIO()
+    Image.new("RGB", (32, 32), "pink").save(file, format="BMP")
+    file.size = file.tell()
+    file.seek(0)
+    with pytest.raises(ValueError, match="contents must be JPEG or PNG"):
+        read_image(file)

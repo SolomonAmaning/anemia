@@ -1,0 +1,10 @@
+# Default deny: medical images must never enter the Docker build context.
+**
+!Dockerfile
+!requirements.txt
+!anemia_prediction.py
+!inference.py
+!model_assets.py
+!serve.py
+!.streamlit/
+!.streamlit/config.toml

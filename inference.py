@@ -30,13 +30,15 @@ def read_image(file):
     if file.size > MAX_BYTES:
         raise ValueError("Image must be 10 MB or smaller.")
     image = Image.open(file)
+    if image.format not in {"JPEG", "PNG"}:
+        raise ValueError("The image contents must be JPEG or PNG, not just the filename extension.")
     if image.width * image.height > 20_000_000:
         raise ValueError("Image dimensions exceed the 20 megapixel limit.")
     return ImageOps.exif_transpose(image).convert("RGB")
 
 
 def classify(model, image):
-    result = model.predict(image, verbose=False)[0]
+    result = model.predict(image, verbose=False, device="cpu")[0]
     if result.probs is None:
         raise ValueError("The model did not return classification probabilities.")
     return result.names[int(result.probs.top1)], float(result.probs.top1conf)
