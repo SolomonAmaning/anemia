@@ -1,92 +1,58 @@
+"""Conjunctival-image research interface. Not a diagnostic device."""
 import streamlit as st
-from ultralytics import YOLO
-from PIL import Image
-import numpy as np
-import cv2
+from inference import classify, load_model, read_image
 
-# Load the YOLO model
-MODEL_PATH = "/Users/solomon1.odum/Documents/Anemia_prediction/runs/classify/train8/weights/best.pt"
-model = YOLO(MODEL_PATH)
+st.set_page_config(page_title="Conjunctiva Lab | Solomon Odum", layout="wide")
 
-# Streamlit App
-st.set_page_config(
-    page_title="Anemia Detection",
-    page_icon="🩺",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
-# Header and Instructions
-st.title("🩺 Anemia Detection from Conjunctiva Images")
-st.markdown(
-    """
-    Welcome to the **Anemia Detection App** created by Solomon Odum! This tool uses a deep learning model trained on conjuctival images to predict whether an uploaded image of the conjunctiva indicates **anemia** or not.
-    \n**Instructions**:
-    - Upload a **clear image** of the conjunctiva (in JPG, PNG, or JPEG format).
-    - For **batch predictions**, upload multiple images at once.
-    - View predictions for each image along with confidence scores.
-    """
-)
+@st.cache_resource
+def get_model():
+    return load_model()
 
-# File uploader for single or multiple images
-uploaded_files = st.file_uploader(
-    "Upload Image(s) of the Conjunctiva",
-    type=["jpg", "png", "jpeg"],
-    accept_multiple_files=True,
-)
 
-# Handle uploaded images
-if uploaded_files:
-    results_container = st.container()
-    for uploaded_file in uploaded_files:
-        try:
-            # Read the image
-            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+st.caption("SOLOMON ODUM / ACCESSIBLE HEALTHCARE AI")
+st.title("Conjunctiva Lab")
+st.write("An image-based anaemia screening research prototype. Inspect model outputs with the limitations in view.")
+st.warning("Research only—not a diagnosis. Requires external validation and clinical evaluation. Model scores are not calibrated probabilities of anaemia. Confirm suspected anaemia through appropriate clinical assessment and laboratory testing.")
 
-            # Check if the uploaded file is a valid image
-            if image is None:
-                st.error(f"Error: {uploaded_file.name} is not a valid image.")
-                continue
+st.sidebar.title("Research workspace")
+st.sidebar.caption("MODEL / YOLOv8 classification")
+st.sidebar.write("Single-image and batch inference")
+st.sidebar.write("Outputs use the trained model's class labels, not an assumed class order.")
+st.sidebar.info("Use consented, de-identified research images only. Do not upload identifiable patient images to a public demo.")
 
-            # Convert BGR to RGB for display
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+try:
+    model = get_model()
+except Exception as error:
+    st.error(f"Model unavailable: {error}")
+    st.stop()
 
-            # Display the uploaded image
-            with results_container:
-                st.image(image_rgb, caption=f"Uploaded Image: {uploaded_file.name}", use_column_width=True)
+a, b, c = st.columns(3)
+a.metric("Model status", "Loaded")
+b.metric("Classification labels", str(len(model.names)))
+c.metric("Intended use", "Research")
+st.caption("Loaded checkpoint: runs/classify/train8/weights/best.pt (or ANEMIA_MODEL_PATH override).")
 
-            # Perform inference
-            results = model.predict(image, verbose=False)
-
-            # Access classification probabilities
-            probs = results[0].probs  # Probabilities object
-            if probs is None:
-                st.error(f"No predictions could be made for {uploaded_file.name}.")
-                continue
-
-            # Get top prediction and confidence
-            predicted_class_idx = probs.top1  # Top-1 predicted class index
-            predicted_confidence = float(probs.top1conf)  # Convert tensor to float
-
-            # Map class index to class name
-            class_names = ["anemic", "non_anemic"]
-            predicted_class = class_names[predicted_class_idx]
-
-            # Display results
-            with results_container:
-                st.success(f"Prediction for **{uploaded_file.name}**: **{predicted_class}**")
-                st.info(f"Confidence: {predicted_confidence * 100:.2f}%")
-
-        except Exception as e:
-            st.error(f"An error occurred while processing {uploaded_file.name}: {e}")
-
-else:
-    st.info("Upload image(s) to see predictions.")
-
-# Footer
-st.markdown(
-    """
-    ---
-    Built with ❤️ using [Streamlit](https://streamlit.io/) and YOLOv8.
-    """)
+left, right = st.columns([2, 1], gap="large")
+with left:
+    st.subheader("Image workspace")
+    st.write("Upload a clear conjunctival image to inspect the classifier output. JPG, JPEG or PNG; up to 10 MB and 20 megapixels per image.")
+    consent = st.checkbox("I am using consented, de-identified research images.")
+    files = st.file_uploader("Research images", type=["jpg", "png", "jpeg"], accept_multiple_files=True, disabled=not consent)
+    if files:
+        for file in files:
+            try:
+                image = read_image(file)
+                label, score = classify(model, image)
+                st.image(image, caption=file.name, use_container_width=True)
+                st.metric("Model class · not a diagnosis", label.replace("_", " "))
+                st.progress(score, text=f"Model class score: {score:.1%} · not calibrated clinical confidence")
+            except Exception as error:
+                st.error(f"Could not process {file.name}: {error}")
+with right:
+    st.subheader("How the prototype works")
+    st.write("01 / Image preparation\n\nValidate dimensions, correct orientation and convert to RGB.")
+    st.write("02 / Model inference\n\nRun the repository's trained YOLOv8 classification checkpoint locally.")
+    st.write("03 / Human interpretation\n\nDisplay the model label and score without asserting a clinical diagnosis.")
+    st.divider()
+    st.caption("No sensitivity, specificity or clinical accuracy claim is implied by this demo. A general classifier does not verify that an input is a conjunctiva image.")
