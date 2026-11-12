@@ -6,6 +6,7 @@ import pytest
 
 import model_assets
 from serve import preflight, require_staging_password, streamlit_command
+from prepare_railway_payload import FILES, prepare_payload
 
 
 @pytest.fixture
@@ -85,3 +86,30 @@ def test_private_staging_accepts_configured_password(monkeypatch):
     monkeypatch.setenv("ANEMIA_REQUIRE_PASSWORD", "true")
     monkeypatch.setenv("ANEMIA_DEMO_PASSWORD", "synthetic-test-password")
     require_staging_password()
+
+
+def test_upload_payload_excludes_images_and_secrets(tmp_path):
+    source = tmp_path / "source"
+    for name in FILES:
+        file = source / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("application file")
+    (source / "patient-image.png").write_bytes(b"not for upload")
+    (source / ".env").write_text("PRIVATE=do-not-upload")
+    destination = prepare_payload(tmp_path / "payload", source)
+    assert {str(p.relative_to(destination)) for p in destination.rglob("*") if p.is_file()} == set(FILES)
+
+
+def test_upload_payload_refuses_unexpected_destination_files(tmp_path):
+    destination = tmp_path / "payload"
+    destination.mkdir()
+    private_file = destination / "patient-image.png"
+    private_file.write_bytes(b"must not be deleted or uploaded")
+    with pytest.raises(ValueError, match="unexpected files"):
+        prepare_payload(destination)
+    assert private_file.exists()
+
+
+def test_upload_payload_cannot_overwrite_source():
+    with pytest.raises(ValueError, match="separate deployment"):
+        prepare_payload(Path(__file__).parent)

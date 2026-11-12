@@ -13,3 +13,4 @@ data/
 Conjuctiva_images/
 evaluation-private/
 .local-evaluation/
+.local-deploy/
