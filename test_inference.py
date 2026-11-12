@@ -50,7 +50,8 @@ def test_app_loads():
     app = AppTest.from_file(str(Path(__file__).parent / "anemia_prediction.py")).run(timeout=90)
     assert not app.exception
     assert not app.error
-    assert app.metric[0].value == "Loaded"
+    assert app.title[0].value == "Explore image-based anaemia screening."
+    assert len(app.metric) == 0  # Do not show meaningless developer counters or invented results.
 
 
 def test_private_demo_gate(monkeypatch):
@@ -59,11 +60,39 @@ def test_private_demo_gate(monkeypatch):
     app = AppTest.from_file(str(Path(__file__).parent / "anemia_prediction.py")).run(timeout=90)
     assert not app.exception
     assert len(app.metric) == 0
-    app.text_input[0].set_value("incorrect").run(timeout=90)
+    app.text_input[0].set_value("incorrect")
+    next(button for button in app.button if button.label == "Open research demo").click().run(timeout=90)
     assert len(app.metric) == 0
-    app.text_input[0].set_value("synthetic-test-password").run(timeout=90)
+    app.text_input[0].set_value("synthetic-test-password")
+    next(button for button in app.button if button.label == "Open research demo").click().run(timeout=90)
     assert not app.exception
-    assert app.metric[0].value == "Loaded"
+    assert app.title[0].value == "Explore image-based anaemia screening."
+    assert len(app.text_input) == 0  # Successful login removes the password form.
+
+
+def test_illustrated_example_never_runs_classifier(monkeypatch):
+    from pathlib import Path
+    import inference
+    monkeypatch.setattr(inference, "classify", lambda *args, **kwargs: pytest.fail("Illustrations must not be classified"))
+    app = AppTest.from_file(str(Path(__file__).parent / "anemia_prediction.py")).run(timeout=90)
+    next(button for button in app.button if button.label == "Explore example workflow").click().run(timeout=90)
+    assert not app.exception
+    assert len(app.metric) == 0
+    assert any("No clinical classification was performed" in element.value for element in app.markdown)
+    next(button for button in app.button if button.label == "Start again").click().run(timeout=90)
+    assert any("From image to careful review" in element.value for element in app.markdown)
+
+
+def test_lock_returns_to_password_gate(monkeypatch):
+    from pathlib import Path
+    monkeypatch.setenv("ANEMIA_DEMO_PASSWORD", "synthetic-test-password")
+    app = AppTest.from_file(str(Path(__file__).parent / "anemia_prediction.py")).run(timeout=90)
+    app.text_input[0].set_value("synthetic-test-password")
+    next(button for button in app.button if button.label == "Open research demo").click().run(timeout=90)
+    next(button for button in app.button if button.label == "Lock demo").click().run(timeout=90)
+    assert not app.exception
+    assert len(app.text_input) == 1
+    assert app.title[0].value == "A research workspace for anaemia screening."
 
 
 def test_actual_image_format_is_checked():

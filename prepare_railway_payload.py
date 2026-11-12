@@ -6,7 +6,7 @@ import shutil
 APP_ROOT = Path(__file__).resolve().parent
 FILES = (
     "Dockerfile", "requirements.txt", "anemia_prediction.py", "inference.py",
-    "model_assets.py", "serve.py", ".dockerignore", ".streamlit/config.toml",
+    "model_assets.py", "serve.py", "presentation.py", ".dockerignore", ".streamlit/config.toml",
 )
 
 

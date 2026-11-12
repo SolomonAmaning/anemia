@@ -6,5 +6,6 @@
 !inference.py
 !model_assets.py
 !serve.py
+!presentation.py
 !.streamlit/
 !.streamlit/config.toml

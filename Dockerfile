@@ -21,7 +21,7 @@ RUN python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
     && python -m pip install -r requirements.txt
 
 # Explicitly copy app code only. No dataset, training images, logs or local secrets.
-COPY anemia_prediction.py inference.py model_assets.py serve.py ./
+COPY anemia_prediction.py inference.py model_assets.py serve.py presentation.py ./
 COPY .streamlit/config.toml .streamlit/config.toml
 
 RUN useradd --create-home --uid 10001 appuser \
